@@ -3,7 +3,7 @@ import numpy as np
 import time
 import onnxruntime as ort
 import os
-from camera import CameraPipeline
+from vision.camera import CameraPipeline
 
 class VisionEngine:
     def __init__(self):
@@ -74,36 +74,36 @@ class VisionEngine:
         return embedding, latency
     
 
-# ==========================================
-# TEST BLOCK: Proving the Math works
-# ==========================================
-if __name__ == "__main__":
-    try:
-        cam = CameraPipeline()
-        engine = VisionEngine()
+# # ==========================================
+# # TEST BLOCK: Proving the Math works
+# # ==========================================
+# if __name__ == "__main__":
+#     try:
+#         cam = CameraPipeline()
+#         engine = VisionEngine()
         
-        print("\n[*] Camera hot. Look at the lens...")
+#         print("\n[*] Camera hot. Look at the lens...")
         
-        # Throw away the first 5 frames (cameras need a moment to adjust auto-exposure)
-        for _ in range(5):
-            cam.get_frame()
-            time.sleep(0.1)
+#         # Throw away the first 5 frames (cameras need a moment to adjust auto-exposure)
+#         for _ in range(5):
+#             cam.get_frame()
+#             time.sleep(0.1)
             
-        frame = cam.get_frame()
-        if frame is not None:
-            embedding, latency = engine.get_embedding(frame)
+#         frame = cam.get_frame()
+#         if frame is not None:
+#             embedding, latency = engine.get_embedding(frame)
             
-            if embedding is not None:
-                print(f"\n[SUCCESS] Face detected and mapped.")
-                print(f"[STAT] Math Array Dimensions: {embedding.shape}")
-                print(f"[STAT] Hardware Inference Latency: {latency:.2f} ms")
-                # Print a tiny slice of the 512 numbers just to prove it exists
-                print(f"[STAT] Vector Signature Snippet: {embedding[:5]}") 
-            else:
-                print("\n[-] No face detected in the frame.")
-        else:
-            print("\n[-] Camera buffer returned empty.")
+#             if embedding is not None:
+#                 print(f"\n[SUCCESS] Face detected and mapped.")
+#                 print(f"[STAT] Math Array Dimensions: {embedding.shape}")
+#                 print(f"[STAT] Hardware Inference Latency: {latency:.2f} ms")
+#                 # Print a tiny slice of the 512 numbers just to prove it exists
+#                 print(f"[STAT] Vector Signature Snippet: {embedding[:5]}") 
+#             else:
+#                 print("\n[-] No face detected in the frame.")
+#         else:
+#             print("\n[-] Camera buffer returned empty.")
             
-    finally:
-        print("[*] Releasing hardware interrupts...")
-        cam.release()
+#     finally:
+#         print("[*] Releasing hardware interrupts...")
+#         cam.release()
