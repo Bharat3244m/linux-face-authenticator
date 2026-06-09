@@ -1,0 +1,25 @@
+# Makefile for Universal Face Authentication Sentry
+
+.PHONY: install uninstall clean help
+
+help:
+	@echo "Universal Face Auth System - Build & Deployment"
+	@echo ""
+	@echo "Commands:"
+	@echo "  make install    - Deploys the sandbox, systemd daemon, and PAM rule"
+	@echo "  make uninstall  - Safely removes all system hooks and daemon files"
+	@echo "  make clean      - Removes local development sandbox (.venv) and caches"
+
+install:
+	@echo "[*] Triggering deployment engine..."
+	@sudo ./install.sh
+
+uninstall:
+	@echo "[*] Triggering uninstall fail-safe..."
+	@sudo ./uninstall.sh
+
+clean:
+	@echo "[*] Purging local development caches..."
+	@rm -rf .venv
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@echo "[+] Clean complete."

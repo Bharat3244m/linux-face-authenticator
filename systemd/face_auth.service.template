@@ -1,0 +1,17 @@
+[Unit]
+Description=Universal Face Authentication Service
+After=multi-user.target video.target
+
+[Service]
+Type=simple
+ExecStart=/opt/faceauth-universal/ .venv/bin/python3 /opt/faceauth-universal/src/daemon.py
+WorkingDirectory=/opt/faceauth-universal
+User=root
+Group=root
+Restart=always
+RestartSec=3
+
+ExecStopPost=/bin/rm -f /tmp/faceauth.sock
+
+[Install]
+WantedBy=multi-user.target

@@ -51,5 +51,5 @@ def enroll_user():
         print("[*] Releasing hardware interrupts...")
         cam.release()
 
-# if __name__ == "__main__":
-#     enroll_user()
+if __name__ == "__main__":
+    enroll_user()
