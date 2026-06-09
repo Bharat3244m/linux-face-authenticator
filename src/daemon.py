@@ -49,9 +49,19 @@ def run_sentry():
                     if frame is not None:
                         embedding, _ = engine.get_embedding(frame)
                         if embedding is not None:
-                            score = np.dot(embedding, baseline)
-                            print(f"[STAT] Cryptographic Match Score: {score:.4f}")
-                            if score >= MATCH_THRESHOLD:
+                            # Normalize the live webcam feed
+                            embedding = embedding / np.linalg.norm(embedding)
+                            
+                            # Multiply the (128,) live face against the (6, 128) baseline matrix
+                            scores = np.dot(baseline, embedding)
+                            
+                            # Grab the highest score out of the 6 angles
+                            best_score = np.max(scores)
+                            print(f"[STAT] Matrix Scores: {scores}")
+                            print(f"[STAT] Best Match: {best_score:.4f}")
+                            
+                            # Send the binary response back through the socket
+                            if best_score >= MATCH_THRESHOLD:
                                 print("[SUCCESS] IDENTITY VERIFIED. UNLOCKING SYSTEM.")
                                 conn.sendall(b"1")
                             else:

@@ -1,54 +1,66 @@
+# src/enroll.py
 import time
 import os
 import numpy as np
+from config import BASELINE_PATH
 from vision.camera import CameraPipeline
 from vision.engine import VisionEngine
 
-BASELINE_PATH =os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_baseline.npy')
-
 def enroll_user():
-    print("\n[*] Initializing enrollment protocol...")
+    print("\n[*] Initializing Multi-Vector Enrollment Protocol...")
     cam = CameraPipeline()
     engine = VisionEngine()
-
-    embeddings = []
-    required_samples = 5
-
-    print(f"\n[*] Need {required_samples} clean captures. Look at the camera...")
-
+    
+    matrix = []
+    
+    # The exact 6-pose sequence you requested
+    poses = [
+        "FRONT FACE (1/2)", "FRONT FACE (2/2)",
+        "LEFT FACE (1/2)", "LEFT FACE (2/2)",
+        "RIGHT FACE (1/2)", "RIGHT FACE (2/2)"
+    ]
+    
     try:
-        # throw away 10 initial frames for the camera to adjust the exposure
+        # Throw away initial frames for auto-exposure
         for _ in range(10):
             cam.get_frame()
             time.sleep(0.1)
-
-        while len(embeddings) < required_samples:
-            frame = cam.get_frame()
-            if frame is None:
-                continue
-
-            embedding, _ = engine.get_embedding(frame)
-
-            if embedding is not None:
-                embeddings.append(embedding)
-                print(f"[+] Capture {len(embeddings)}/{required_samples} complete.")
-                time.sleep(0.5)
-            else:
-                print("[-] No face detected in the frame. adjust lighting or posistion...")
-                time.sleep(1)
             
-        print("\n[*] Compiling biometric master key")
-
-        master_embedding = np.mean(embeddings, axis=0)
-        master_embedding = master_embedding / np.linalg.norm(master_embedding)
-
-        np.save(BASELINE_PATH, master_embedding)
-
-        print(f"[SUCCESS] Master key saved to: {BASELINE_PATH}")
-        print("[*] Your are now securely enrolled in the system.")
-    
+        for pose in poses:
+            print(f"\n[*] Please position: {pose}")
+            time.sleep(1.5) # Give you time to move your head
+            
+            captured = False
+            while not captured:
+                frame = cam.get_frame()
+                if frame is None:
+                    continue
+                    
+                embedding, _ = engine.get_embedding(frame)
+                
+                if embedding is not None:
+                    # Normalize the individual vector before adding to matrix
+                    normalized_vector = embedding / np.linalg.norm(embedding)
+                    matrix.append(normalized_vector)
+                    print(f"[+] Capture successful.")
+                    captured = True
+                    time.sleep(0.5)
+                else:
+                    print("[-] Face lost. Adjust angle slightly...")
+                    time.sleep(1)
+                
+        print("\n[*] Compiling 6-Pose Biometric Matrix...")
+        
+        # Convert list of 6 vectors into a strict (6, 128) NumPy Matrix
+        master_matrix = np.array(matrix)
+        
+        # Save the matrix to disk
+        np.save(BASELINE_PATH, master_matrix)
+        
+        print(f"[SUCCESS] Matrix saved. Dimensions: {master_matrix.shape}")
+        print("[*] Multi-pose authentication is now locked in.")
+        
     finally:
-        print("[*] Releasing hardware interrupts...")
         cam.release()
 
 if __name__ == "__main__":

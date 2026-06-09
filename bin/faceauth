@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]; then
+  echo "[-] CRITICAL: Please run with sudo (e.g., sudo faceauth enroll)"
+  exit 1
+fi
+
+if [ "$1" == "enroll" ]; then
+    echo "[*] Launching Biometric Enrollment..."
+    /opt/faceauth-universal/.venv/bin/python /opt/faceauth-universal/src/enroll.py
+    
+    echo "[*] Reloading Sentry Daemon with new baseline..."
+    systemctl restart faceauth.service
+    echo "[SUCCESS] System updated."
+else
+    echo "Universal Face Authentication"
+    echo "Usage:"
+    echo "  sudo faceauth enroll   - Register or update your face"
+fi

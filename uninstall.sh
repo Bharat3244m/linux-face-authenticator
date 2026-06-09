@@ -1,26 +1,48 @@
 #!/bin/bash
-# uninstall.sh
+# Description: Safely removes the faceauth module and restores system defaults.
 
-if [ "$EUID" -ne 0 ]; then
-  echo "[-] CRITICAL: Please run the uninstaller with sudo."
-  exit 1
+set -euo pipefail
+
+# --- Configuration Variables ---
+APP_NAME="faceauth"
+INSTALL_DIR="/opt/$APP_NAME"
+BIN_DIR="/usr/local/bin"
+SYSTEMD_DIR="/etc/systemd/system"
+PAM_FILE="/etc/pam.d/sudo"
+
+# --- Logging Functions ---
+log_info() { echo -e "[INFO] $1"; }
+log_err()  { echo -e "[ERROR] $1" >&2; exit 1; }
+
+# --- Pre-flight Checks ---
+if [[ "$EUID" -ne 0 ]]; then
+    log_err "Uninstallation requires root privileges. Please execute with sudo."
 fi
 
-echo "[*] Initiating Uninstallation Protocol..."
+log_info "Initiating uninstallation of $APP_NAME..."
 
-# 1. Kill the Daemon
-systemctl stop faceauth.service
-systemctl disable faceauth.service
-rm -f /etc/systemd/system/faceauth.service
+# --- 1. Service Teardown ---
+log_info "Terminating background services..."
+if systemctl is-active --quiet faceauth.service; then
+    systemctl disable --now faceauth.service || true
+fi
+rm -f "$SYSTEMD_DIR/faceauth.service"
 systemctl daemon-reload
 
-# 2. Remove the PAM Injection (The most important step)
-echo "[*] Restoring standard /etc/pam.d/sudo configuration..."
-sed -i '/faceauth-trigger/d' /etc/pam.d/sudo
+# --- 2. PAM Restoration ---
+log_info "Restoring default PAM configuration..."
+if grep -q "faceauth-trigger" "$PAM_FILE"; then
+    sed -i '/faceauth-trigger/d' "$PAM_FILE"
+    log_info "PAM configuration restored successfully."
+else
+    log_info "No faceauth rules found in PAM configuration."
+fi
 
-# 3. Purge the Files
-rm -rf /opt/faceauth-universal
-rm -f /usr/local/bin/faceauth-trigger
+# --- 3. Asset Purge ---
+log_info "Removing application binaries and working directories..."
+rm -rf "$INSTALL_DIR"
+rm -f "$BIN_DIR/faceauth"
+rm -f "$BIN_DIR/faceauth-trigger"
 rm -f /tmp/faceauth.sock
 
-echo "[SUCCESS] System restored to factory password authentication."
+log_info "Uninstallation complete. System restored to standard configuration."
