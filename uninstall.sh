@@ -1,5 +1,6 @@
 #!/bin/bash
 # Description: Safely removes the faceauth module and restores system defaults.
+# Target OS: Linux (Universal / OS-Agnostic)
 
 set -euo pipefail
 
@@ -23,11 +24,17 @@ log_info "Initiating uninstallation of $APP_NAME..."
 
 # --- 1. Service Teardown ---
 log_info "Terminating background services..."
-if systemctl is-active --quiet faceauth.service; then
-    systemctl disable --now faceauth.service || true
+# Safely check if systemd actually exists on this Linux distribution before calling it
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet faceauth.service 2>/dev/null || systemctl is-enabled --quiet faceauth.service 2>/dev/null; then
+        systemctl disable --now faceauth.service || true
+    fi
+    rm -f "$SYSTEMD_DIR/faceauth.service"
+    systemctl daemon-reload || true
+else
+    log_info "Systemd engine not detected. Bypassing service termination."
+    rm -f "$SYSTEMD_DIR/faceauth.service"
 fi
-rm -f "$SYSTEMD_DIR/faceauth.service"
-systemctl daemon-reload
 
 # --- 2. PAM Restoration ---
 log_info "Restoring default PAM configuration..."

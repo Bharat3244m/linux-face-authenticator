@@ -3,25 +3,25 @@ import numpy as np
 import time
 import onnxruntime as ort
 import os
-from vision.camera import CameraPipeline
+import src.config as cf
 
 class VisionEngine:
     def __init__(self):
         print("[*] Booting Universal ONNX Engine")
 
         # paths
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        detector_path = os.path.join(base_dir, "models", "face_detection_yunet_2023mar.onnx")
-        recognizer_path = os.path.join(base_dir, "models", "face_recognition_sface_2021dec.onnx")
+        # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # detector_path = os.path.join(base_dir, "models", "face_detection_yunet_2023mar.onnx")
+        # recognizer_path = os.path.join(base_dir, "models", "face_recognition_sface_2021dec.onnx")
 
-        if not os.path.exists(detector_path) or not os.path.exists(recognizer_path):
+        if not os.path.exists(cf.DETECTOR_MODEL) or not os.path.exists(cf.RECOGNIZER_MODEL):
             raise FileNotFoundError("CRITICAL: ONNX models missing from src/models/")
         
         # 1. Initialize YuNet (Face Detection)
         self.detector = cv2.FaceDetectorYN.create(
-            model=detector_path,
+            model=cf.DETECTOR_MODEL,
             config="",
-            input_size=(640, 480),
+            input_size=(cf.CAMERA_WIDTH, cf.CAMERA_HEIGHT),
             score_threshold=0.8,
             nms_threshold=0.3,
             top_k=1
@@ -34,7 +34,7 @@ class VisionEngine:
             'ROCMExecutionProvider'
             'OpenVINOExecutionProvider'
         ]
-        self.recognizer = ort.InferenceSession(recognizer_path, providers=providers)
+        self.recognizer = ort.InferenceSession(cf.RECOGNIZER_MODEL, providers=providers)
         print(f"[+] Inference successfully bound to: {self.recognizer.get_providers()[0]}")
     
     def get_embedding(self, frame):
@@ -74,36 +74,5 @@ class VisionEngine:
         return embedding, latency
     
 
-# # ==========================================
-# # TEST BLOCK: Proving the Math works
-# # ==========================================
-# if __name__ == "__main__":
-#     try:
-#         cam = CameraPipeline()
-#         engine = VisionEngine()
-        
-#         print("\n[*] Camera hot. Look at the lens...")
-        
-#         # Throw away the first 5 frames (cameras need a moment to adjust auto-exposure)
-#         for _ in range(5):
-#             cam.get_frame()
-#             time.sleep(0.1)
-            
-#         frame = cam.get_frame()
-#         if frame is not None:
-#             embedding, latency = engine.get_embedding(frame)
-            
-#             if embedding is not None:
-#                 print(f"\n[SUCCESS] Face detected and mapped.")
-#                 print(f"[STAT] Math Array Dimensions: {embedding.shape}")
-#                 print(f"[STAT] Hardware Inference Latency: {latency:.2f} ms")
-#                 # Print a tiny slice of the 512 numbers just to prove it exists
-#                 print(f"[STAT] Vector Signature Snippet: {embedding[:5]}") 
-#             else:
-#                 print("\n[-] No face detected in the frame.")
-#         else:
-#             print("\n[-] Camera buffer returned empty.")
-            
-#     finally:
-#         print("[*] Releasing hardware interrupts...")
-#         cam.release()
+
+

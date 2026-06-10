@@ -1,6 +1,6 @@
 #!/bin/bash
 # Description: Installs and configures the faceauth authentication module.
-# Target OS: Linux (Debian/Ubuntu)
+# Target OS: Linux (Universal / OS-Agnostic)
 
 # Enforce strict error handling:
 # -e: Exit immediately if a command exits with a non-zero status.
@@ -35,12 +35,62 @@ log_info "Setting up installation directories at $INSTALL_DIR..."
 install -d -m 755 "$INSTALL_DIR"
 cp -r src/ requirements.txt "$INSTALL_DIR/"
 
-# --- 2. Environment Configuration ---
-log_info "Provisioning isolated Python environment..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y -qq python3-venv python3-pip > /dev/null
+# --- 2. Environment Configuration (Universal OS Detection) ---
+log_info "Detecting Linux Distribution..."
 
+if [[ -f /etc/os-release ]]; then
+    # Source the file. We disable set -u temporarily just in case the 
+    # OS file contains unbound variables, then immediately re-enable it.
+    set +u
+    . /etc/os-release
+    set -u
+    OS="${ID:-}"
+    OS_LIKE="${ID_LIKE:-}"
+    PRETTY="${PRETTY_NAME:-$OS}"
+else
+    log_err "Cannot determine Linux distribution. /etc/os-release not found."
+fi
+
+log_info "Provisioning isolated Python environment for: $PRETTY..."
+
+case "$OS" in
+    *ubuntu*|*debian*|*pop*|*kali*|*mint*)
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y -qq python3-venv python3-pip > /dev/null
+        ;;
+    *fedora*|*rhel*|*centos*)
+        dnf install -y -q python3 python3-pip
+        ;;
+    *arch*|*manjaro*)
+        pacman -Sy --noconfirm --quiet python python-pip
+        ;;
+    *opensuse*|*suse*)
+        zypper refresh -q
+        zypper install -y -q python3 python3-pip
+        ;;
+    *)
+        # Fallback to parent architecture
+        case "$OS_LIKE" in
+            *debian*)
+                export DEBIAN_FRONTEND=noninteractive
+                apt-get update -qq
+                apt-get install -y -qq python3-venv python3-pip > /dev/null
+                ;;
+            *arch*)
+                pacman -Sy --noconfirm --quiet python python-pip
+                ;;
+            *rhel*|*fedora*)
+                dnf install -y -q python3 python3-pip
+                ;;
+            *)
+                log_err "Unsupported distribution engine. Please install 'python3-venv' and 'python3-pip' manually."
+                ;;
+        esac
+        ;;
+esac
+
+log_info "Building venv and installing Python dependencies..."
 python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --quiet --upgrade pip
 "$VENV_DIR/bin/pip" install --quiet -r "$INSTALL_DIR/requirements.txt"

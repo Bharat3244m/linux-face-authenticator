@@ -2,7 +2,7 @@
 import time
 import os
 import numpy as np
-from config import BASELINE_PATH
+import src.config as cf
 from vision.camera import CameraPipeline
 from vision.engine import VisionEngine
 
@@ -55,7 +55,7 @@ def enroll_user():
         master_matrix = np.array(matrix)
         
         # Save the matrix to disk
-        np.save(BASELINE_PATH, master_matrix)
+        np.save(cf.BASELINE_PATH, master_matrix)
         
         print(f"[SUCCESS] Matrix saved. Dimensions: {master_matrix.shape}")
         print("[*] Multi-pose authentication is now locked in.")

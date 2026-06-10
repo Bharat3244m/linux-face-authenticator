@@ -27,3 +27,4 @@ CAMERA_HEIGHT = 480
 # - 0.363 is OpenCV's baseline research recommendation.
 # - 0.900+ is highly secure root-level protection.
 MATCH_THRESHOLD = 0.900
+

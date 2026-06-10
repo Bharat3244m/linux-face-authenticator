@@ -2,35 +2,32 @@ import socket
 import os
 import time
 import numpy as np
+import src.config as cf
 from vision.camera import CameraPipeline
 from vision.engine import VisionEngine
 
-SOCKET_PATH = "/tmp/faceauth.sock"
-BASELINE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_baseline.npy')
-
-MATCH_THRESHOLD = 0.99
 
 def run_sentry():
-    if not os.path.exists(BASELINE_PATH):
+    if not os.path.exists(cf.BASELINE_PATH):
         print("[-] CRITICAL: No baseline found. Exiting.")
         return
     
     print("[*] Sentry Daemon initializing...")
 
     # 1. Load the baseline and neural network in ram permanently
-    baseline = np.load(BASELINE_PATH)
+    baseline = np.load(cf.BASELINE_PATH)
     engine = VisionEngine()
 
     # 2. Bind the UNIX Socket
-    if os.path.exists(SOCKET_PATH):
-        os.remove(SOCKET_PATH)
+    if os.path.exists(cf.SOCKET_PATH):
+        os.remove(cf.SOCKET_PATH)
 
     server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    server.bind(SOCKET_PATH)
-    os.chmod(SOCKET_PATH, 0o666)
+    server.bind(cf.SOCKET_PATH)
+    os.chmod(cf.SOCKET_PATH, 0o666)
     server.listen(1)
 
-    print(f"\n[*] Sentry locked. Listening for IPC triggers on {SOCKET_PATH}...")
+    print(f"\n[*] Sentry locked. Listening for IPC triggers on {cf.SOCKET_PATH}...")
 
     # 3. the Infinite sleep/wake loop
     while True:
@@ -61,7 +58,7 @@ def run_sentry():
                             print(f"[STAT] Best Match: {best_score:.4f}")
                             
                             # Send the binary response back through the socket
-                            if best_score >= MATCH_THRESHOLD:
+                            if best_score >= cf.MATCH_THRESHOLD:
                                 print("[SUCCESS] IDENTITY VERIFIED. UNLOCKING SYSTEM.")
                                 conn.sendall(b"1")
                             else:
