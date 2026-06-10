@@ -2,7 +2,7 @@ import socket
 import os
 import time
 import numpy as np
-import src.config as cf
+import config as cf
 from vision.camera import CameraPipeline
 from vision.engine import VisionEngine
 
@@ -44,29 +44,35 @@ def run_sentry():
                     
                     frame = cam.get_frame()
                     if frame is not None:
-                        embedding, _ = engine.get_embedding(frame)
-                        if embedding is not None:
-                            # Normalize the live webcam feed
-                            embedding = embedding / np.linalg.norm(embedding)
+                        # --- CORE VERIFICATION LOGIC ---
+                            embedding, latency = engine.get_embedding(frame)
                             
-                            # Multiply the (128,) live face against the (6, 128) baseline matrix
-                            scores = np.dot(baseline, embedding)
-                            
-                            # Grab the highest score out of the 6 angles
-                            best_score = np.max(scores)
-                            print(f"[STAT] Matrix Scores: {scores}")
-                            print(f"[STAT] Best Match: {best_score:.4f}")
-                            
-                            # Send the binary response back through the socket
-                            if best_score >= cf.MATCH_THRESHOLD:
-                                print("[SUCCESS] IDENTITY VERIFIED. UNLOCKING SYSTEM.")
-                                conn.sendall(b"1")
-                            else:
-                                print("[!] STRANGER DETECTED. ACCESS DENIED.")
+                            # 1. Null Check (No face or spoof detected)
+                            if embedding is None:
+                                print(f"[!] No face / Spoof detected. Aborting.")
                                 conn.sendall(b"0")
-                        else:
-                            print("[-] No face detected in frame. ACCESS DENIED.")
-                            conn.sendall(b"0")
+                                break 
+                            
+                            # 2. Math Check
+                            try:
+                                embedding = embedding / np.linalg.norm(embedding)
+                                scores = np.dot(baseline, embedding)
+                                best_score = np.max(scores)
+                                
+                                print(f"[STAT] Math Score: {best_score:.4f}")
+                                
+                                # HARDCODED FAIL-CLOSED GATE
+                                if best_score >= 0.65:
+                                    print("[+] Identity Confirmed. Unlocking PAM.")
+                                    conn.sendall(b"1")
+                                else:
+                                    print(f"[-] Intruder Rejected. Score too low.")
+                                    conn.sendall(b"0")
+                            except Exception as e:
+                                print(f"[CRITICAL] Math failure: {e}")
+                                conn.sendall(b"0") # Fail-closed on any error
+                            
+                            break # Always break after one complete check
                     else:
                         print("[-] Camera hardware buffer failed.")
                         conn.sendall(b"0")

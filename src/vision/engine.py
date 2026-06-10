@@ -3,7 +3,7 @@ import numpy as np
 import time
 import onnxruntime as ort
 import os
-import src.config as cf
+import config as cf
 
 class VisionEngine:
     def __init__(self):
@@ -30,8 +30,8 @@ class VisionEngine:
         # 2. Initialize MobileFaceNet (face Recognition)
         providers = [
             'CUDAExecutionProvider',
-            'CPUExecutionProvider'
-            'ROCMExecutionProvider'
+            'CPUExecutionProvider',
+            'ROCMExecutionProvider',
             'OpenVINOExecutionProvider'
         ]
         self.recognizer = ort.InferenceSession(cf.RECOGNIZER_MODEL, providers=providers)

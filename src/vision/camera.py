@@ -1,5 +1,5 @@
 import cv2 
-import src.config as cf
+import config as cf
 
 class CameraPipeline:
     def __init__(self, device_id=cf.CAMERA_DEVICE_ID):

@@ -1,8 +1,7 @@
 # src/enroll.py
 import time
-import os
 import numpy as np
-import src.config as cf
+import config as cf
 from vision.camera import CameraPipeline
 from vision.engine import VisionEngine
 

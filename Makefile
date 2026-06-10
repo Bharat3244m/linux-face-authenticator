@@ -1,4 +1,4 @@
-# Makefile for Universal Face Authentication Sentry
+# Makefile for Face Authentication Sentry
 
 .PHONY: help install uninstall clean
 
@@ -6,7 +6,7 @@
 .DEFAULT_GOAL := help
 
 help:
-	@echo "Universal Face Auth System - Build & Deployment"
+	@echo "Face Auth System - Build & Deployment"
 	@echo ""
 	@echo "Commands:"
 	@echo "  sudo make install    - Deploys the sandbox, systemd daemon, and PAM rule"
@@ -19,6 +19,7 @@ install:
 		exit 1; \
 	fi
 	@echo "[*] Triggering deployment engine..."
+	@chmod +x ./install.sh
 	@./install.sh
 
 uninstall:
@@ -27,6 +28,7 @@ uninstall:
 		exit 1; \
 	fi
 	@echo "[*] Triggering uninstall fail-safe..."
+	@chmod +x ./uninstall.sh
 	@./uninstall.sh
 
 clean:

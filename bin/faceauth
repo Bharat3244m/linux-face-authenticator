@@ -1,19 +1,32 @@
 #!/bin/bash
+# Global CLI command for the faceauth system
 
-if [ "$EUID" -ne 0 ]; then
-  echo "[-] CRITICAL: Please run with sudo (e.g., sudo faceauth enroll)"
-  exit 1
-fi
+APP_DIR="/opt/faceauth"
+PYTHON_BIN="$APP_DIR/.venv/bin/python3"
+ENROLL_SCRIPT="$APP_DIR/src/enroll.py"
 
-if [ "$1" == "enroll" ]; then
+if [[ "$1" == "enroll" ]]; then
     echo "[*] Launching Biometric Enrollment..."
-    /opt/faceauth-universal/.venv/bin/python /opt/faceauth-universal/src/enroll.py
     
-    echo "[*] Reloading Sentry Daemon with new baseline..."
-    systemctl restart faceauth.service
-    echo "[SUCCESS] System updated."
+    # Execute the Python enrollment script
+    if "$PYTHON_BIN" "$ENROLL_SCRIPT"; then
+        
+        # Safely check if the systemd service actually exists before restarting it
+        # This prevents the race condition during initial installation
+        if systemctl list-unit-files faceauth.service > /dev/null 2>&1; then
+            echo "[*] Reloading Sentry Daemon with new baseline..."
+            systemctl restart faceauth.service
+            echo "[SUCCESS] System updated."
+        else
+            echo "[*] Baseline saved. Service will be registered shortly."
+        fi
+        
+    else
+        echo "[-] Enrollment failed or aborted."
+        exit 1
+    fi
 else
-    echo "Universal Face Authentication"
-    echo "Usage:"
-    echo "  sudo faceauth enroll   - Register or update your face"
+    echo "Face Authentication Sentry"
+    echo "Usage: faceauth enroll"
+    exit 1
 fi
