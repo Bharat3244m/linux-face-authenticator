@@ -1,23 +1,17 @@
 import cv2
 import numpy as np
 import time
-import onnxruntime as ort
 import os
 import config as cf
 
 class VisionEngine:
     def __init__(self):
-        print("[*] Booting Universal ONNX Engine")
-
-        # paths
-        # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # detector_path = os.path.join(base_dir, "models", "face_detection_yunet_2023mar.onnx")
-        # recognizer_path = os.path.join(base_dir, "models", "face_recognition_sface_2021dec.onnx")
+        print("[*] Booting SFace ONNX Engine...")
 
         if not os.path.exists(cf.DETECTOR_MODEL) or not os.path.exists(cf.RECOGNIZER_MODEL):
             raise FileNotFoundError("CRITICAL: ONNX models missing from src/models/")
         
-        # 1. Initialize YuNet (Face Detection)
+        # 1. Initialize YuNet (Face Detection & Landmarks)
         self.detector = cv2.FaceDetectorYN.create(
             model=cf.DETECTOR_MODEL,
             config="",
@@ -27,52 +21,38 @@ class VisionEngine:
             top_k=1
         )
 
-        # 2. Initialize MobileFaceNet (face Recognition)
-        providers = [
-            'CUDAExecutionProvider',
-            'CPUExecutionProvider',
-            'ROCMExecutionProvider',
-            'OpenVINOExecutionProvider'
-        ]
-        self.recognizer = ort.InferenceSession(cf.RECOGNIZER_MODEL, providers=providers)
-        print(f"[+] Inference successfully bound to: {self.recognizer.get_providers()[0]}")
+        # 2. Initialize SFace (Identity & Alignment Wrapper)
+        # This completely replaces the manual 'onnxruntime' block
+        self.recognizer = cv2.FaceRecognizerSF.create(
+            model=cf.RECOGNIZER_MODEL,
+            config=""
+        )
+        print("[+] Inference engine bound to OpenCV DNN")
     
     def get_embedding(self, frame):
-        # takes raw frame and convert it to 512D vector 
         height, width, _ = frame.shape
         self.detector.setInputSize((width, height))
         start_time = time.perf_counter()
 
-        # 1. Detect
+        # 1. Detect Face and Landmarks
         _, faces = self.detector.detect(frame)
         if faces is None:
             return None, 0
         
         face = faces[0]
-        x, y, w, h = int(face[0]), int(face[1]), int(face[2]), int(face[3])
-        x, y = max(0, x), max(0, y)
-        x_end, y_end = min(width, x + w), min(height, y + h)
 
-        # 2. Isolate and Preprocess
-        face_crop = frame[y:y_end, x:x_end]
-        if face_crop.size == 0:
-            return None, 0
+        # 2. THE FIX: Affine Alignment
+        # Automatically warps, rotates, and crops to a perfect 112x112 standard
+        aligned_face = self.recognizer.alignCrop(frame, face)
         
-        face_crop = cv2.resize(face_crop, (112, 112))
-        face_crop = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
+        # 3. Extract Identity Vector
+        embedding = self.recognizer.feature(aligned_face)
         
-        blob = (face_crop.astype(np.float32) - 127.5) / 127.5
-        blob = np.transpose(blob, (2, 0, 1))
-        blob = np.expand_dims(blob, axis=0)
-
-        input_name = self.recognizer.get_inputs()[0].name
-        embedding = self.recognizer.run(None, {input_name: blob})[0][0]
+        # OpenCV returns a 2D array, grab the raw 1D vector
+        embedding = embedding[0]
         
+        # 4. Normalize to prevent exploding dot products
         embedding = embedding / np.linalg.norm(embedding)
 
         latency = (time.perf_counter() - start_time) * 1000
         return embedding, latency
-    
-
-
-

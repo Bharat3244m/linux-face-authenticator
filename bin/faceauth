@@ -1,5 +1,4 @@
 #!/bin/bash
-# Global CLI command for the faceauth system
 
 APP_DIR="/opt/faceauth"
 PYTHON_BIN="$APP_DIR/.venv/bin/python3"
@@ -8,7 +7,6 @@ ENROLL_SCRIPT="$APP_DIR/src/enroll.py"
 if [[ "$1" == "enroll" ]]; then
     echo "[*] Launching Biometric Enrollment..."
     
-    # Execute the Python enrollment script
     if "$PYTHON_BIN" "$ENROLL_SCRIPT"; then
         
         # Safely check if the systemd service actually exists before restarting it
