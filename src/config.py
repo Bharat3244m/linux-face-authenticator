@@ -13,7 +13,7 @@ SOCKET_PATH = "/tmp/faceauth.sock"
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 DETECTOR_MODEL = os.path.join(MODELS_DIR, 'face_detection_yunet_2023mar.onnx')
 RECOGNIZER_MODEL = os.path.join(MODELS_DIR, 'face_recognition_sface_2021dec.onnx')
-LIVENESS_MODEL = os.path.join(MODELS_DIR, 'minifasnet.onnx')
+LIVENESS_MODEL = os.path.join(MODELS_DIR, 'minifasnet_v2.onnx')
 BASELINE_PATH = os.path.join(BASE_DIR, 'user_baseline.npy')
 
 # 4. Hardware Constraints

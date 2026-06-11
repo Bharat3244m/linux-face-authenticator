@@ -62,7 +62,7 @@ def run_sentry():
                                 print(f"[STAT] Math Score: {best_score:.4f}")
                                 
                                 # HARDCODED FAIL-CLOSED GATE
-                                if best_score >= 0.65:
+                                if best_score >= cf.MATCH_THRESHOLD:
                                     print("[+] Identity Confirmed. Unlocking PAM.")
                                     conn.sendall(b"1")
                                 else:
