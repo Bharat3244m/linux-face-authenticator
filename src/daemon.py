@@ -44,35 +44,35 @@ def run_sentry():
                     
                     frame = cam.get_frame()
                     if frame is not None:
-                        # --- CORE VERIFICATION LOGIC ---
-                            embedding, latency = engine.get_embedding(frame)
+                    # --- CORE VERIFICATION LOGIC ---
+                        embedding, latency = engine.get_embedding(frame)
+                        
+                        # 1. Null Check (No face or spoof detected)
+                        if embedding is None:
+                            print(f"[!] No face / Spoof detected. Aborting.")
+                            conn.sendall(b"0")
+                            break 
+                        
+                        # 2. Math Check
+                        try:
+                            embedding = embedding / np.linalg.norm(embedding)
+                            scores = np.dot(baseline, embedding)
+                            best_score = np.max(scores)
                             
-                            # 1. Null Check (No face or spoof detected)
-                            if embedding is None:
-                                print(f"[!] No face / Spoof detected. Aborting.")
+                            print(f"[STAT] Math Score: {best_score:.4f}")
+                            
+                            # HARDCODED FAIL-CLOSED GATE
+                            if best_score >= cf.MATCH_THRESHOLD:
+                                print("[+] Identity Confirmed. Unlocking PAM.")
+                                conn.sendall(b"1")
+                            else:
+                                print(f"[-] Intruder Rejected. Score too low.")
                                 conn.sendall(b"0")
-                                break 
-                            
-                            # 2. Math Check
-                            try:
-                                embedding = embedding / np.linalg.norm(embedding)
-                                scores = np.dot(baseline, embedding)
-                                best_score = np.max(scores)
-                                
-                                print(f"[STAT] Math Score: {best_score:.4f}")
-                                
-                                # HARDCODED FAIL-CLOSED GATE
-                                if best_score >= cf.MATCH_THRESHOLD:
-                                    print("[+] Identity Confirmed. Unlocking PAM.")
-                                    conn.sendall(b"1")
-                                else:
-                                    print(f"[-] Intruder Rejected. Score too low.")
-                                    conn.sendall(b"0")
-                            except Exception as e:
-                                print(f"[CRITICAL] Math failure: {e}")
-                                conn.sendall(b"0") # Fail-closed on any error
-                            
-                            break # Always break after one complete check
+                        except Exception as e:
+                            print(f"[CRITICAL] Math failure: {e}")
+                            conn.sendall(b"0") # Fail-closed on any error
+                        
+                        break # Always break after one complete check
                     else:
                         print("[-] Camera hardware buffer failed.")
                         conn.sendall(b"0")

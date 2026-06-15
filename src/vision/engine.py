@@ -12,7 +12,7 @@ class VisionEngine:
         if not os.path.exists(cf.DETECTOR_MODEL) or not os.path.exists(cf.RECOGNIZER_MODEL):
             raise FileNotFoundError("CRITICAL: Vision models missing from src/models/")
         
-        # 1. Initialize YuNet (Geometry & Detection)
+        # 1. Initialize YuNet 
         self.detector = cv2.FaceDetectorYN.create(
             model=cf.DETECTOR_MODEL,
             config="",
@@ -23,7 +23,6 @@ class VisionEngine:
         )
 
         # 2. Initialize GATE 1: MiniFASNet (Anti-Spoofing / Liveness)
-        # Using onnxruntime since OpenCV lacks a direct wrapper for this model
         if not os.path.exists(cf.LIVENESS_MODEL):
             raise FileNotFoundError("CRITICAL: Liveness model missing. Cannot guarantee anti-spoofing.")
         self.liveness = ort.InferenceSession(cf.LIVENESS_MODEL, providers=['CPUExecutionProvider'])
@@ -40,7 +39,6 @@ class VisionEngine:
         self.detector.setInputSize((width, height))
         start_time = time.perf_counter()
 
-        # --- STAGE 0: ACQUISITION ---
         _, faces = self.detector.detect(frame)
         if faces is None:
             return None, 0
@@ -48,19 +46,18 @@ class VisionEngine:
 
         # --- GATE 1: LIVENESS (Fail-Fast) ---
         x, y, w, h = int(face[0]), int(face[1]), int(face[2]), int(face[3])
-        cx = x + w // 2
-        cy = y + h // 2
+
+        cx = x + w // 2    # Face center point
+        cy = y + h // 2   
+
         side =  int(max(w, h) * 2.7)
-        # FAS models require background context (phone edges) to spot spoofs.
-        # We expand the bounding box by 15% to give the AI edge-visibility.
-        # margin = int(w * 0.15)
-        x1, y1 = max(0, cx - side), max(0, cy - side)
-        x2, y2 = min(width, cx + w + side), min(height, cy + h + side)
+
+        x1, y1 = max(0, cx - side // 2), max(0, cy - side // 2)
+        x2, y2 = min(width, cx + w + side // 2), min(height, cy + h + side // 2)
         
         fas_crop = frame[y1:y2, x1:x2]
         if fas_crop.size == 0:
             return None, 0
-        # Standard MiniFASNet input size is 80x80 (change to 112x112 if your specific model requires it)
         fas_crop = cv2.resize(fas_crop, (80, 80))
         blob = cv2.dnn.blobFromImage(fas_crop, 1.0, (80, 80), (0, 0, 0), swapRB=False, crop=False)
         

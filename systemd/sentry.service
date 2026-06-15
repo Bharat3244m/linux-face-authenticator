@@ -4,14 +4,14 @@ After=multi-user.target video.target
 
 [Service]
 Type=simple
-ExecStart=/opt/faceauth/.venv/bin/python3 /opt/faceauth/src/daemon.py
-WorkingDirectory=/opt/faceauth
+ExecStart=/opt/sentry/.venv/bin/python3 /opt/sentry/src/daemon.py
+WorkingDirectory=/opt/sentry
 User=root
 Group=root
 Restart=always
 RestartSec=3
 
-ExecStopPost=/bin/rm -f /tmp/faceauth.sock
+ExecStopPost=/bin/rm -f /tmp/sentry.sock
 
 [Install]
 WantedBy=multi-user.target

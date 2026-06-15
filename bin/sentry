@@ -1,6 +1,12 @@
 #!/bin/bash
 
-APP_DIR="/opt/faceauth"
+# 1. Strict Root Enforcement
+if [ "$EUID" -ne 0 ]; then
+  echo "[!] Error: Sentry touches secured vaults. Please run as root (sudo sentry enroll)"
+  exit 1
+fi
+
+APP_DIR="/opt/sentry"
 PYTHON_BIN="$APP_DIR/.venv/bin/python3"
 ENROLL_SCRIPT="$APP_DIR/src/enroll.py"
 
@@ -8,12 +14,10 @@ if [[ "$1" == "enroll" ]]; then
     echo "[*] Launching Biometric Enrollment..."
     
     if "$PYTHON_BIN" "$ENROLL_SCRIPT"; then
-        
-        # Safely check if the systemd service actually exists before restarting it
-        # This prevents the race condition during initial installation
-        if systemctl list-unit-files faceauth.service > /dev/null 2>&1; then
+    
+        if systemctl list-unit-files sentry.service > /dev/null 2>&1; then
             echo "[*] Reloading Sentry Daemon with new baseline..."
-            systemctl restart faceauth.service
+            systemctl restart sentry.service
             echo "[SUCCESS] System updated."
         else
             echo "[*] Baseline saved. Service will be registered shortly."
@@ -24,7 +28,7 @@ if [[ "$1" == "enroll" ]]; then
         exit 1
     fi
 else
-    echo "Face Authentication Sentry"
-    echo "Usage: faceauth enroll"
+    echo "Sentry Biometric Daemon"
+    echo "Usage: sudo sentry enroll"
     exit 1
 fi

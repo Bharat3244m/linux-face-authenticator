@@ -1,4 +1,4 @@
-# src/enroll.py
+import os
 import time
 import numpy as np
 import config as cf
@@ -12,7 +12,6 @@ def enroll_user():
     
     matrix = []
     
-    # The exact 6-pose sequence you requested
     poses = [
         "FRONT FACE (1/2)", "FRONT FACE (2/2)",
         "LEFT FACE (1/2)", "LEFT FACE (2/2)",
@@ -27,7 +26,7 @@ def enroll_user():
             
         for pose in poses:
             print(f"\n[*] Please position: {pose}")
-            time.sleep(1.5) # Give you time to move your head
+            time.sleep(2) # Give you time to move your head
             
             captured = False
             while not captured:
@@ -56,7 +55,14 @@ def enroll_user():
         # Save the matrix to disk
         np.save(cf.BASELINE_PATH, master_matrix)
         
+        # Grab the real user who invoked sudo, or fallback to the logged-in user
+        real_user = os.environ.get('SUDO_USER') or os.getlogin()
+        
+        with open(cf.AUTH_FILE, 'w') as f:
+            f.write(real_user)
+        
         print(f"[SUCCESS] Matrix saved. Dimensions: {master_matrix.shape}")
+        print(f"[*] Security clearance dynamically bound to user: {real_user}")
         print("[*] Multi-pose authentication is now locked in.")
         
     finally:
