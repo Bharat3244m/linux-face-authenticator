@@ -1,6 +1,6 @@
 # Makefile for Face Authentication Sentry
 
-.PHONY: help install uninstall clean
+.PHONY: help install uninstall clean tarball
 
 # Ensure 'help' is the default target if a user just types 'make'
 .DEFAULT_GOAL := help
@@ -19,8 +19,8 @@ install:
 		exit 1; \
 	fi
 	@echo "[*] Triggering deployment engine..."
-	@chmod +x ./install.sh
-	@./install.sh
+	@chmod +x scripts/install.sh
+	@scripts/install.sh
 
 uninstall:
 	@if [ "$$(id -u)" -ne 0 ]; then \
@@ -28,11 +28,19 @@ uninstall:
 		exit 1; \
 	fi
 	@echo "[*] Triggering uninstall fail-safe..."
-	@chmod +x ./uninstall.sh
-	@./uninstall.sh
+	@chmod +x scripts/uninstall.sh
+	@scripts/uninstall.sh
 
 clean:
 	@echo "[*] Purging local development caches..."
-	@rm -rf .venv
+	@rm -rf .venv __pycache__/ *.deb *.tar.gz
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@echo "[+] Clean complete."
+
+tarball:
+	@echo "Building universal source tarball..."
+	mkdir -p build/sentry
+	cp -r src/ bin/ security/ systemd/ requirements.txt scripts/* build/sentry/
+	tar -czvf sentry_1.0.0_source.tar.gz -C build sentry/
+	rm -rf build/
+	@echo "Tarball built successfully."

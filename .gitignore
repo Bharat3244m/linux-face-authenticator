@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Build Artifacts
+*.deb
+*.tar.gz
+*.zip
