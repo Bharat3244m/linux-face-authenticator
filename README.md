@@ -32,10 +32,10 @@ This is the recommended path for Debian-family systems, allowing for seamless au
 
 ```bash
 # 1. Add the repository public signing key
-curl -s --compressed "https://USERNAME.github.io/sentry-ppa/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sentry-ppa.gpg >/dev/null
+curl -s --compressed "https://Bharat3244m.github.io/sentry-ppa/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sentry-ppa.gpg >/dev/null
 
 # 2. Add the repository source
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/sentry-ppa.gpg] https://USERNAME.github.io/sentry-ppa ./" | sudo tee /etc/apt/sources.list.d/sentry.list
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/sentry-ppa.gpg] https://Bharat3244m.github.io/sentry-ppa ./" | sudo tee /etc/apt/sources.list.d/sentry.list
 
 # 3. Synchronize package lists and install
 sudo apt update
