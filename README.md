@@ -53,7 +53,7 @@ tar -xzf sentry_1.0.0_source.tar.gz
 cd sentry
 
 # 2. Execute the automated installer
-sudo ./install.sh
+sudo scripts/install.sh
 ```
 
 *The installer automatically detects your package manager, provisions underlying graphical dependencies (`libgl1`, `glib2`, `mesa`), builds an isolated virtual environment, and registers the system daemon.*
@@ -105,7 +105,7 @@ sudo rm /etc/apt/trusted.gpg.d/sentry-ppa.gpg
 Navigate to your extracted source folder and run:
 
 ```bash
-sudo ./uninstall.sh
+sudo scripts/uninstall.sh
 ```
 
 ---
